@@ -33,6 +33,9 @@ private val DarkColorScheme = darkColorScheme(
     onBackground = OnBackgroundDark,
     surface = SurfaceDark,
     onSurface = OnSurfaceDark,
+    surfaceVariant = SurfaceVariantDark,
+    onSurfaceVariant = OnSurfaceVariantDark,
+    outline = OutlineDark,
     error = Error,
     onError = OnError,
     errorContainer = ErrorContainer,
@@ -56,6 +59,9 @@ private val LightColorScheme = lightColorScheme(
     onBackground = OnBackground,
     surface = Surface,
     onSurface = OnSurface,
+    surfaceVariant = SurfaceVariant,
+    onSurfaceVariant = OnSurfaceVariant,
+    outline = Outline,
     error = Error,
     onError = OnError,
     errorContainer = ErrorContainer,
@@ -65,8 +71,7 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun MedicineReminderTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = false,
+    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -77,14 +82,16 @@ fun MedicineReminderTheme(
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
+    
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = Color.Transparent.toArgb()
-            window.navigationBarColor = Color.Transparent.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
-            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !darkTheme
+            window.statusBarColor = colorScheme.background.toArgb()
+            window.navigationBarColor = colorScheme.background.toArgb()
+            val insetsController = WindowCompat.getInsetsController(window, view)
+            insetsController.isAppearanceLightStatusBars = !darkTheme
+            insetsController.isAppearanceLightNavigationBars = !darkTheme
         }
     }
 

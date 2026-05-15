@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.medicinereminder.data.model.Medicine
 import com.example.medicinereminder.presentation.components.AppToolbar
 import com.example.medicinereminder.presentation.components.DeleteConfirmationDialog
 import com.example.medicinereminder.presentation.components.getMedicineIcon
@@ -71,7 +70,7 @@ fun MedicineDetailsScreen(
                 }
             )
         }
-    ) { padding ->
+    ) { _ ->
         when (val result = medicineState) {
             is Resource.Loading -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

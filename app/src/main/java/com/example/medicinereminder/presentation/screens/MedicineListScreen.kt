@@ -5,7 +5,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,9 +24,12 @@ import com.example.medicinereminder.utils.Resource
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MedicineListScreen(
-    navController: NavController,
-    viewModel: MedicineViewModel = viewModel(factory = ViewModelFactory(LocalContext.current))
+    navController: NavController
 ) {
+    val context = LocalContext.current
+    val factory = ViewModelFactory(context)
+    val viewModel: MedicineViewModel = viewModel(modelClass = MedicineViewModel::class.java, factory = factory)
+    
     val medicinesState by viewModel.medicinesState.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf("All") }
@@ -40,13 +42,14 @@ fun MedicineListScreen(
             )
         },
         floatingActionButton = {
-            LargeFloatingActionButton(
+            FloatingActionButton(
                 onClick = { navController.navigate(Screen.AddMedicine.route) },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = RoundedCornerShape(20.dp)
+                shape = RoundedCornerShape(20.dp),
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Medicine", modifier = Modifier.size(30.dp))
+                Icon(Icons.Default.Add, contentDescription = "Add Medicine", modifier = Modifier.size(28.dp))
             }
         }
     ) { padding ->
@@ -55,12 +58,13 @@ fun MedicineListScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            // Refined Filter/Search Area
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 2.dp
+                color = MaterialTheme.colorScheme.background,
+                tonalElevation = 0.dp
             ) {
-                Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
+                Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
                     MedicineSearchBar(
                         query = searchQuery,
                         onQueryChange = { searchQuery = it }
@@ -76,10 +80,12 @@ fun MedicineListScreen(
                 }
             }
 
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+
             when (val result = medicinesState) {
                 is Resource.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                        CircularProgressIndicator()
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 }
                 is Resource.Success -> {
@@ -95,8 +101,8 @@ fun MedicineListScreen(
                         )
                     } else {
                         LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(24.dp)
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 100.dp)
                         ) {
                             items(filteredMedicines) { medicine ->
                                 MedicineCard(
@@ -106,13 +112,12 @@ fun MedicineListScreen(
                                     }
                                 )
                             }
-                            item { Spacer(modifier = Modifier.height(80.dp)) }
                         }
                     }
                 }
                 is Resource.Error -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(text = "Error: ${result.message}", color = MaterialTheme.colorScheme.error)
+                        ErrorMessage(message = result.message ?: "Failed to load medicines")
                     }
                 }
             }

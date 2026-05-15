@@ -9,12 +9,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -27,16 +27,9 @@ import androidx.navigation.NavController
 import com.example.medicinereminder.data.model.Medicine
 import com.example.medicinereminder.data.model.ReminderRecord
 import com.example.medicinereminder.data.model.ReminderStatus
-import com.example.medicinereminder.presentation.components.AppToolbar
-import com.example.medicinereminder.presentation.components.DashboardCard
-import com.example.medicinereminder.presentation.components.MedicineCard
-import com.example.medicinereminder.presentation.components.SmartInsightCard
+import com.example.medicinereminder.presentation.components.*
 import com.example.medicinereminder.presentation.navigation.Screen
-import com.example.medicinereminder.presentation.viewmodel.AuthViewModel
-import com.example.medicinereminder.presentation.viewmodel.MedicineViewModel
-import com.example.medicinereminder.presentation.viewmodel.ProfileViewModel
-import com.example.medicinereminder.presentation.viewmodel.ReminderViewModel
-import com.example.medicinereminder.presentation.viewmodel.ViewModelFactory
+import com.example.medicinereminder.presentation.viewmodel.*
 import com.example.medicinereminder.utils.Resource
 import kotlinx.coroutines.flow.collectLatest
 
@@ -52,7 +45,7 @@ fun HomeScreen(
     val medicineViewModel: MedicineViewModel = viewModel(modelClass = MedicineViewModel::class.java, factory = factory)
     val reminderViewModel: ReminderViewModel = viewModel(modelClass = ReminderViewModel::class.java, factory = factory)
     val profileViewModel: ProfileViewModel = viewModel(modelClass = ProfileViewModel::class.java, factory = factory)
-    val familyViewModel: com.example.medicinereminder.presentation.viewmodel.FamilyProfileViewModel = viewModel(modelClass = com.example.medicinereminder.presentation.viewmodel.FamilyProfileViewModel::class.java, factory = factory)
+    val familyViewModel: FamilyProfileViewModel = viewModel(modelClass = FamilyProfileViewModel::class.java, factory = factory)
 
     val medicinesState by medicineViewModel.medicinesState.collectAsState()
     val remindersState by reminderViewModel.remindersState.collectAsState()
@@ -61,7 +54,6 @@ fun HomeScreen(
     val allFamilyProfiles by familyViewModel.profiles.collectAsState()
     val interactionWarning by medicineViewModel.interactionWarning.collectAsState()
 
-    val medicineCount = if (medicinesState is Resource.Success) (medicinesState as Resource.Success<List<Medicine>>).data?.size ?: 0 else 0
     val pendingCount = if (remindersState is Resource.Success) {
         (remindersState as Resource.Success<List<ReminderRecord>>).data?.count { it.status == ReminderStatus.PENDING || it.status == ReminderStatus.SNOOZED } ?: 0
     } else 0
@@ -75,55 +67,37 @@ fun HomeScreen(
         if (userId.isNotEmpty()) familyViewModel.loadProfiles(userId)
     }
 
-    LaunchedEffect(key1 = true) {
-        authViewModel.eventFlow.collectLatest { event ->
-            when (event) {
-                is AuthViewModel.UiEvent.Navigate -> {
-                    navController.navigate(event.route) {
-                        popUpTo(Screen.Home.route) { inclusive = true }
-                    }
-                }
-                else -> {}
-            }
-        }
-    }
-
     Scaffold(
         topBar = {
             AppToolbar(
                 title = "My Health",
                 actions = {
-                    IconButton(onClick = { navController.navigate(Screen.AIChat.route) }) {
-                        Icon(Icons.Default.Chat, contentDescription = "AI Assistant")
+                    IconButton(
+                        onClick = { navController.navigate(Screen.AIChat.route) },
+                        modifier = Modifier.padding(end = 4.dp)
+                    ) {
+                        Icon(Icons.Default.Chat, contentDescription = "AI Assistant", tint = MaterialTheme.colorScheme.primary)
                     }
-                    IconButton(onClick = { navController.navigate(Screen.TodayReminders.route) }) {
+                    IconButton(
+                        onClick = { navController.navigate(Screen.TodayReminders.route) },
+                        modifier = Modifier.padding(end = 12.dp)
+                    ) {
                         BadgedBox(badge = { if (pendingCount > 0) Badge { Text("$pendingCount") } }) {
-                            Icon(Icons.Default.NotificationsNone, contentDescription = "Notifications")
+                            Icon(Icons.Default.NotificationsNone, contentDescription = "Notifications", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
             )
         },
         floatingActionButton = {
-            Column(horizontalAlignment = Alignment.End) {
-                SmallFloatingActionButton(
-                    onClick = { navController.navigate(Screen.OCRScanner.route) },
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                    shape = CircleShape
-                ) {
-                    Icon(Icons.Default.DocumentScanner, contentDescription = "Scan Prescription")
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                ExtendedFloatingActionButton(
-                    onClick = { navController.navigate(Screen.AddMedicine.route) },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    shape = RoundedCornerShape(20.dp),
-                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                    text = { Text("Add Med") }
-                )
-            }
+            ExtendedFloatingActionButton(
+                onClick = { navController.navigate(Screen.AddMedicine.route) },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = RoundedCornerShape(20.dp),
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text("Add Med", fontWeight = FontWeight.Bold) }
+            )
         }
     ) { padding ->
         Column(
@@ -131,17 +105,50 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            // Family Profile Switcher
+            // Hero Section: Greeting & Family
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
+            ) {
+                Text(
+                    text = "Hello,",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = authViewModel.userState.value?.name ?: "Healthy User",
+                        style = MaterialTheme.typography.displaySmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    IconButton(
+                        onClick = { navController.navigate(Screen.Analytics.route) },
+                        modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                    ) {
+                        Icon(Icons.Default.AutoGraph, contentDescription = "Analytics", tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+
+            // Family Profile Switcher (Refined)
             if (allFamilyProfiles is Resource.Success) {
                 val profiles = (allFamilyProfiles as Resource.Success<List<com.example.medicinereminder.data.model.FamilyProfile>>).data
                 if (!profiles.isNullOrEmpty()) {
                     LazyRow(
-                        modifier = Modifier.padding(vertical = 8.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp)
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        contentPadding = PaddingValues(horizontal = 24.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(profiles) { profile ->
-                            com.example.medicinereminder.presentation.components.FamilyProfileCard(
+                            FamilyProfileCard(
                                 profile = profile,
                                 isSelected = currentFamilyProfile?.id == profile.id,
                                 onClick = { familyViewModel.switchProfile(profile) }
@@ -151,69 +158,52 @@ fun HomeScreen(
                 }
             }
 
-            // Profile Completion Prompt
+            // Profile Completion Prompt (Refined)
             if (isProfileIncomplete) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 12.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f))
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f))
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondary)
+                            }
+                        }
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Complete Your Profile", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
-                            Text("Add health details for better AI insights", style = MaterialTheme.typography.labelSmall)
+                            Text("Complete Profile", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                            Text("Better AI tracking awaits", style = MaterialTheme.typography.labelSmall)
                         }
-                        TextButton(onClick = { navController.navigate(Screen.Profile.route) }) {
-                            Text("Complete", fontWeight = FontWeight.Bold)
+                        Button(
+                            onClick = { navController.navigate(Screen.Profile.route) },
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                        ) {
+                            Text("Start", style = MaterialTheme.typography.labelLarge)
                         }
                     }
                 }
             }
 
-            // Hero Section
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 24.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Good Morning,",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = authViewModel.userState.value?.name ?: "Healthy User",
-                            style = MaterialTheme.typography.displaySmall,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    IconButton(
-                        onClick = { navController.navigate(Screen.Analytics.route) },
-                        modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                    ) {
-                        Icon(Icons.Default.AutoGraph, contentDescription = "Analytics", tint = MaterialTheme.colorScheme.onPrimaryContainer)
-                    }
-                }
-            }
+            // Daily Progress Section (Redesigned)
+            DailyProgressSection(remindersState)
 
             // Smart Insight Section
             SmartInsightCard(
                 title = "Smart Tip",
-                description = "Taking Vitamin D with a meal improves absorption. Try scheduled it during lunch.",
+                description = "Taking Vitamin D with a meal improves absorption. Try scheduling it during lunch.",
                 onClick = { navController.navigate(Screen.AIChat.route) }
             )
 
@@ -226,132 +216,49 @@ fun HomeScreen(
                 )
             }
 
-            // Daily Progress Section
-            DailyProgressCard(remindersState)
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Streak & Quick Stats
+            // Section: Quick Stats (Streak & Adherence)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = 24.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Card(
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFF9800).copy(alpha = 0.1f))
-                ) {
-                    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.LocalFireDepartment, contentDescription = null, tint = Color(0xFFFF9800))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column {
-                            Text("3 Day", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            Text("Streak", style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
-                }
-                Card(
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50).copy(alpha = 0.1f))
-                ) {
-                    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.TaskAlt, contentDescription = null, tint = Color(0xFF4CAF50))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column {
-                            Text("85%", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            Text("Adherence", style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
-                }
+                StatCardSmall(
+                    label = "Current Streak",
+                    value = "3 Days",
+                    icon = Icons.Default.LocalFireDepartment,
+                    color = Color(0xFFF97316)
+                )
+                StatCardSmall(
+                    label = "Adherence",
+                    value = "85%",
+                    icon = Icons.Default.CheckCircle,
+                    color = Color(0xFF10B981)
+                )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Timeline Preview
+            // Section: Next Dose Timeline
             SectionHeader(
-                title = "Today's Timeline",
+                title = "Upcoming",
                 actionText = "Timeline",
                 onActionClick = { navController.navigate(Screen.TodayReminders.route) }
             )
-
             UpcomingReminderSection(remindersState)
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Health Tracking Grid
-            Text(
-                text = "Health Tracking",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 24.dp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                QuickActionCard(
-                    title = "Calendar",
-                    icon = Icons.Default.CalendarMonth,
-                    color = Color(0xFF673AB7),
-                    onClick = { navController.navigate(Screen.Calendar.route) },
-                    modifier = Modifier.weight(1f)
-                )
-                QuickActionCard(
-                    title = "Reports",
-                    icon = Icons.Default.BarChart,
-                    color = Color(0xFF009688),
-                    onClick = { navController.navigate(Screen.Reports.route) },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                QuickActionCard(
-                    title = "Voice",
-                    icon = Icons.Default.Mic,
-                    color = Color(0xFFFF5722),
-                    onClick = { navController.navigate(Screen.VoiceAssistant.route) },
-                    modifier = Modifier.weight(1f)
-                )
-                QuickActionCard(
-                    title = "Scan",
-                    icon = Icons.Default.DocumentScanner,
-                    color = Color(0xFFE91E63),
-                    onClick = { navController.navigate(Screen.OCRScanner.route) },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // My Medications
+            // Section: My Medications
             SectionHeader(
-                title = "My Medications",
+                title = "Medications",
                 actionText = "View All",
                 onActionClick = { navController.navigate(Screen.MedicineList.route) }
             )
-
             Box(modifier = Modifier.padding(horizontal = 24.dp)) {
                 when (val result = medicinesState) {
                     is Resource.Success -> {
                         val recent = result.data?.take(3) ?: emptyList()
                         if (recent.isEmpty()) {
                             DashboardCard(
-                                title = "No medicines yet",
-                                description = "Add your first medicine reminder to get started.",
+                                title = "No meds added",
+                                description = "Start tracking your medications by adding your first reminder.",
                                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                             )
                         } else {
@@ -374,114 +281,58 @@ fun HomeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            // Section: Health Toolkit (Grid)
+            Text(
+                text = "Health Toolkit",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
+            )
+            ToolkitGrid(navController)
 
-            // History Log Button
-            Card(
-                onClick = { navController.navigate(Screen.ReminderHistory.route) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .padding(bottom = 100.dp),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f))
-            ) {
-                Row(
-                    modifier = Modifier.padding(20.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.History, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiary)
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Medicine Logs", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text("Review your adherence history", style = MaterialTheme.typography.bodySmall)
-                    }
-                    Icon(Icons.Default.ChevronRight, contentDescription = null)
-                }
-            }
+            // Bottom Spacer for FAB
+            Spacer(modifier = Modifier.height(100.dp))
         }
     }
 }
 
 @Composable
-fun QuickActionCard(
-    title: String,
-    icon: ImageVector,
-    color: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    ElevatedCard(
-        onClick = onClick,
-        modifier = modifier,
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = color.copy(alpha = 0.1f),
-                modifier = Modifier.size(40.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
-                }
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(text = title, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-        }
-    }
-}
+fun DailyProgressSection(state: Resource<List<ReminderRecord>>) {
+    val total = if (state is Resource.Success) state.data?.size ?: 0 else 0
+    val taken = if (state is Resource.Success) state.data?.count { it.status == ReminderStatus.TAKEN } ?: 0 else 0
+    val progress = if (total > 0) taken.toFloat() / total else 0f
 
-@Composable
-fun DailyProgressCard(remindersState: Resource<List<ReminderRecord>>) {
-    ElevatedCard(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp),
+            .padding(horizontal = 24.dp, vertical = 12.dp),
         shape = RoundedCornerShape(32.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.primary)
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
     ) {
         Row(
             modifier = Modifier.padding(24.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val total = if (remindersState is Resource.Success) remindersState.data?.size ?: 0 else 0
-            val taken = if (remindersState is Resource.Success) remindersState.data?.count { it.status == ReminderStatus.TAKEN } ?: 0 else 0
-            val missed = if (remindersState is Resource.Success) remindersState.data?.count { it.status == ReminderStatus.MISSED } ?: 0 else 0
-            val progress = if (total > 0) taken.toFloat() / total else 0f
-
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(80.dp)) {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(84.dp)) {
                 CircularProgressIndicator(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f),
-                    strokeWidth = 8.dp,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                    strokeWidth = 10.dp,
                     progress = { 1f }
                 )
                 CircularProgressIndicator(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 8.dp,
+                    color = MaterialTheme.colorScheme.primary,
+                    strokeWidth = 10.dp,
                     strokeCap = StrokeCap.Round,
                     progress = { progress }
                 )
                 Text(
                     text = "${(progress * 100).toInt()}%",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimary
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
             
@@ -489,19 +340,15 @@ fun DailyProgressCard(remindersState: Resource<List<ReminderRecord>>) {
             
             Column {
                 Text(
-                    text = "Daily Progress",
+                    text = "Daily Adherence",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimary
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Text(
-                    text = when {
-                        total == 0 -> "No meds today"
-                        missed > 0 -> "$taken of $total taken • $missed missed"
-                        else -> "$taken of $total doses taken"
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                    text = if (total == 0) "No medications today" else "$taken of $total doses taken",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                 )
             }
         }
@@ -509,34 +356,96 @@ fun DailyProgressCard(remindersState: Resource<List<ReminderRecord>>) {
 }
 
 @Composable
-fun StatCard(title: String, value: String, icon: ImageVector, containerColor: Color, modifier: Modifier) {
-    Card(
-        modifier = modifier,
+fun StatCardSmall(label: String, value: String, icon: ImageVector, color: Color) {
+    Surface(
+        modifier = Modifier.width(160.dp),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = containerColor)
+        color = color.copy(alpha = 0.1f)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(text = value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text(text = title, style = MaterialTheme.typography.labelMedium)
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(24.dp))
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text(text = value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = color)
+                Text(text = label, style = MaterialTheme.typography.labelSmall, color = color.copy(alpha = 0.7f))
+            }
         }
     }
 }
 
 @Composable
-fun SectionHeader(title: String, actionText: String, onActionClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+fun ToolkitGrid(navController: NavController) {
+    Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            ToolkitItem(
+                title = "Calendar",
+                icon = Icons.Default.CalendarMonth,
+                color = Color(0xFF8B5CF6),
+                modifier = Modifier.weight(1f),
+                onClick = { navController.navigate(Screen.Calendar.route) }
+            )
+            ToolkitItem(
+                title = "Reports",
+                icon = Icons.Default.BarChart,
+                color = Color(0xFF10B981),
+                modifier = Modifier.weight(1f),
+                onClick = { navController.navigate(Screen.Reports.route) }
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            ToolkitItem(
+                title = "Voice",
+                icon = Icons.Default.Mic,
+                color = Color(0xFFF59E0B),
+                modifier = Modifier.weight(1f),
+                onClick = { navController.navigate(Screen.VoiceAssistant.route) }
+            )
+            ToolkitItem(
+                title = "Scan",
+                icon = Icons.Default.DocumentScanner,
+                color = Color(0xFFEC4899),
+                modifier = Modifier.weight(1f),
+                onClick = { navController.navigate(Screen.OCRScanner.route) }
+            )
+        }
+    }
+}
+
+@Composable
+fun ToolkitItem(
+    title: String,
+    icon: ImageVector,
+    color: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.height(100.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
     ) {
-        Text(text = title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        TextButton(onClick = onActionClick) {
-            Text(actionText, fontWeight = FontWeight.Bold)
-            Icon(Icons.Default.ChevronRight, contentDescription = null, modifier = Modifier.size(16.dp))
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = color.copy(alpha = 0.15f),
+                modifier = Modifier.size(40.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
+                }
+            }
+            Text(text = title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -552,46 +461,57 @@ fun UpcomingReminderSection(state: Resource<List<ReminderRecord>>) {
                 }?.sortedBy { it.scheduledTime }?.firstOrNull()
 
                 if (upcoming != null) {
-                    Card(
+                    Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
+                        shape = RoundedCornerShape(28.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 2.dp,
+                        border = androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
                     ) {
                         Row(
-                            modifier = Modifier.padding(24.dp),
+                            modifier = Modifier.padding(20.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = "Next Dose",
                                     style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold
                                 )
                                 Text(
                                     text = upcoming.medicineName,
                                     style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimary
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = upcoming.reminderTime,
                                     style = MaterialTheme.typography.titleLarge,
-                                    color = MaterialTheme.colorScheme.onPrimary
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            Icon(
-                                Icons.Default.NotificationsActive,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(40.dp)
-                            )
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier.size(56.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Default.NotificationsActive,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
+                            }
                         }
                     }
                 } else {
                     DashboardCard(
-                        title = "All done for today!",
-                        description = "You've taken all your medications for now.",
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        title = "Healthy & Done!",
+                        description = "You've taken all your medications for today. Great job!",
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                     )
                 }
             }
