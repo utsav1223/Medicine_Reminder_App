@@ -16,6 +16,7 @@ data class ReminderRecordEntity(
     val reminderDate: Long,
     val scheduledTime: Long,
     val status: String,
+    val imageUrl: String? = null,
     val completedAt: Long?,
     val userId: String,
     val lastModified: Long,
@@ -32,6 +33,7 @@ fun ReminderRecordEntity.toReminderRecord(): ReminderRecord {
         reminderDate = reminderDate,
         scheduledTime = scheduledTime,
         status = ReminderStatus.valueOf(status),
+        imageUrl = imageUrl,
         completedAt = completedAt,
         lastModified = lastModified,
         userId = userId
@@ -48,6 +50,7 @@ fun ReminderRecord.toEntity(isSynced: Boolean = false, lastModified: Long = Syst
         reminderDate = reminderDate,
         scheduledTime = scheduledTime,
         status = status.name,
+        imageUrl = imageUrl,
         completedAt = completedAt,
         userId = userId,
         lastModified = if (lastModified > this.lastModified) lastModified else this.lastModified,

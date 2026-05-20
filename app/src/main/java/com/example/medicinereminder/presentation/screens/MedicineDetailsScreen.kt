@@ -15,12 +15,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.medicinereminder.presentation.components.AppToolbar
 import com.example.medicinereminder.presentation.components.DeleteConfirmationDialog
 import com.example.medicinereminder.presentation.components.getMedicineIcon
@@ -109,12 +111,21 @@ fun MedicineDetailsScreen(
                                 shadowElevation = 12.dp
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = getMedicineIcon(medicine.medicineType),
-                                        contentDescription = null,
-                                        tint = themeColor,
-                                        modifier = Modifier.size(50.dp)
-                                    )
+                                    if (medicine.imageUrl != null) {
+                                        AsyncImage(
+                                            model = medicine.imageUrl,
+                                            contentDescription = null,
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = getMedicineIcon(medicine.medicineType),
+                                            contentDescription = null,
+                                            tint = themeColor,
+                                            modifier = Modifier.size(50.dp)
+                                        )
+                                    }
                                 }
                             }
                             Spacer(modifier = Modifier.height(16.dp))

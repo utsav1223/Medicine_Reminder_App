@@ -1,22 +1,29 @@
 package com.example.medicinereminder.presentation.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Medication
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.medicinereminder.data.model.Medicine
 import com.example.medicinereminder.presentation.components.*
 import com.example.medicinereminder.presentation.viewmodel.MedicineViewModel
@@ -41,6 +48,13 @@ fun EditMedicineScreen(
     var endDate by remember { mutableStateOf(System.currentTimeMillis()) }
     var notes by remember { mutableStateOf("") }
     var selectedColor by remember { mutableStateOf(0xFF006A6A.toInt()) }
+    var imageUri by remember { mutableStateOf<String?>(null) }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        imageUri = uri?.toString()
+    }
 
     val colors = listOf(0xFF006A6A.toInt(), 0xFFBA1A1A.toInt(), 0xFF4B607C.toInt(), 0xFF4A6363.toInt(), 0xFFE65100.toInt())
 
@@ -59,6 +73,7 @@ fun EditMedicineScreen(
             endDate = medicine.endDate
             notes = medicine.notes
             selectedColor = medicine.colorTag
+            imageUri = medicine.imageUrl
         }
     }
 
@@ -93,6 +108,57 @@ fun EditMedicineScreen(
                     .padding(horizontal = 24.dp)
                     .verticalScroll(rememberScrollState())
             ) {
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Box(
+                    modifier = Modifier
+                        .size(120.dp)
+                        .align(Alignment.CenterHorizontally)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable { imagePickerLauncher.launch("image/*") }
+                        .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), RoundedCornerShape(16.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (imageUri != null) {
+                        AsyncImage(
+                            model = imageUri,
+                            contentDescription = "Medicine Image",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                        Surface(
+                            onClick = { imageUri = null },
+                            modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                        ) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Remove Image",
+                                modifier = Modifier.size(16.dp),
+                                tint = Color.White
+                            )
+                        }
+                    } else {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Default.AddPhotoAlternate,
+                                contentDescription = null,
+                                modifier = Modifier.size(40.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                "Add Image",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
                 AppTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -178,7 +244,8 @@ fun EditMedicineScreen(
                                 startDate = startDate,
                                 endDate = endDate,
                                 notes = notes,
-                                colorTag = selectedColor
+                                colorTag = selectedColor,
+                                imageUrl = imageUri
                             )
                         )
                     },
