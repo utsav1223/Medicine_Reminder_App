@@ -54,7 +54,7 @@ class ViewModelFactory(private val context: Context) : ViewModelProvider.Factory
                 AIChatViewModel(repository = aiRepository) as T
             }
             modelClass.isAssignableFrom(OCRViewModel::class.java) -> {
-                OCRViewModel(repository = ocrRepository) as T
+                OCRViewModel(repository = ocrRepository, aiRepository = aiRepository) as T
             }
             modelClass.isAssignableFrom(ProfileViewModel::class.java) -> {
                 ProfileViewModel(repository = profileRepository) as T

@@ -83,7 +83,7 @@ class NotificationHelper(private val context: Context) {
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // Use appropriate icon
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Medicine Reminder: $medicineName")
             .setContentText("It's time to take your $dosage of $medicineName")
             .setPriority(NotificationCompat.PRIORITY_HIGH)

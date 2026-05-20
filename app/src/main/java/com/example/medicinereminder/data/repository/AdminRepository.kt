@@ -8,6 +8,7 @@ import kotlinx.coroutines.tasks.await
 interface AdminRepository {
     suspend fun getSystemAnalytics(): Resource<AdminAnalytics>
     suspend fun getAllUsers(): Resource<List<com.example.medicinereminder.data.model.User>>
+    suspend fun deleteUser(uid: String): Resource<Unit>
 }
 
 class AdminRepositoryImpl(
@@ -36,6 +37,15 @@ class AdminRepositoryImpl(
             Resource.Success(users)
         } catch (e: Exception) {
             Resource.Error(e.message ?: "Failed to fetch users")
+        }
+    }
+
+    override suspend fun deleteUser(uid: String): Resource<Unit> {
+        return try {
+            firestore.collection("users").document(uid).delete().await()
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Failed to delete user")
         }
     }
 }

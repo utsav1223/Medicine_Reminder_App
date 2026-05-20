@@ -21,38 +21,45 @@ class ReminderRepositoryImpl(
     override suspend fun scheduleDailyReminders(userId: String): Resource<Unit> {
         return try {
             val now = System.currentTimeMillis()
-            val startOfDay = DateUtils.getStartOfDay()
-            val endOfDay = DateUtils.getEndOfDay()
+            val todayStart = DateUtils.getStartOfDay()
+            val tomorrowStart = DateUtils.getStartOfDay(DateUtils.getNextDay())
+            
+            val daysToSchedule = listOf(todayStart, tomorrowStart)
 
             // 1. Get all active medicines from local Room
             val medicines = medicineDao.getMedicines(userId).first()
                 .map { it.toMedicine() }
-                .filter { it.startDate <= endOfDay && it.endDate >= startOfDay }
 
-            // 2. For each medicine, create reminders for today if not already created
+            // 2. For each medicine, create reminders for today and tomorrow if not already created
             for (medicine in medicines) {
-                for (time in medicine.timingList) {
-                    val scheduledTime = DateUtils.getTimeInMillis(time)
+                for (startOfDay in daysToSchedule) {
+                    val endOfDay = DateUtils.getEndOfDay(startOfDay)
                     
-                    if (scheduledTime < now) continue 
+                    if (medicine.startDate > endOfDay || medicine.endDate < startOfDay) continue
 
-                    val reminderId = "${medicine.medicineId}_${startOfDay}_${time.replace(" ", "_")}"
-                    
-                    val existing = reminderDao.getReminderById(reminderId)
-                    if (existing == null) {
-                        val reminder = ReminderRecord(
-                            reminderId = reminderId,
-                            medicineId = medicine.medicineId,
-                            medicineName = medicine.medicineName,
-                            dosage = medicine.dosage,
-                            reminderTime = time,
-                            reminderDate = startOfDay,
-                            scheduledTime = scheduledTime,
-                            status = ReminderStatus.PENDING,
-                            userId = userId
-                        )
-                        reminderDao.insertReminder(reminder.toEntity(isSynced = false))
-                        scheduler.schedule(reminder)
+                    for (time in medicine.timingList) {
+                        val scheduledTime = DateUtils.getTimeInMillis(time, startOfDay)
+                        
+                        if (scheduledTime < now) continue 
+
+                        val reminderId = "${medicine.medicineId}_${startOfDay}_${time.replace(" ", "_")}"
+                        
+                        val existing = reminderDao.getReminderById(reminderId)
+                        if (existing == null) {
+                            val reminder = ReminderRecord(
+                                reminderId = reminderId,
+                                medicineId = medicine.medicineId,
+                                medicineName = medicine.medicineName,
+                                dosage = medicine.dosage,
+                                reminderTime = time,
+                                reminderDate = startOfDay,
+                                scheduledTime = scheduledTime,
+                                status = ReminderStatus.PENDING,
+                                userId = userId
+                            )
+                            reminderDao.insertReminder(reminder.toEntity(isSynced = false))
+                            scheduler.schedule(reminder)
+                        }
                     }
                 }
             }

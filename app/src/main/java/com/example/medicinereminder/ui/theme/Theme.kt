@@ -71,7 +71,7 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun MedicineReminderTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // Set to false by default to respect custom palette
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

@@ -23,14 +23,10 @@ class SplashViewModel(
         viewModelScope.launch {
             delay(2000) // Animated splash delay
             
-            val onboardingCompleted = preferencesStore.onboardingCompleted.first()
-            
-            if (!onboardingCompleted) {
-                _eventFlow.emit(UiEvent.Navigate(Screen.AppIntro.route))
-            } else if (repository.currentUser != null) {
+            if (repository.currentUser != null) {
                 _eventFlow.emit(UiEvent.Navigate(Screen.Home.route))
             } else {
-                _eventFlow.emit(UiEvent.Navigate(Screen.Login.route))
+                _eventFlow.emit(UiEvent.Navigate(Screen.AppIntro.route))
             }
         }
     }

@@ -2,7 +2,6 @@ package com.example.medicinereminder.presentation.screens
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -46,28 +45,34 @@ fun AppIntroScreen(
             backgroundColor = MaterialTheme.colorScheme.primaryContainer
         ),
         OnboardingPage(
-            title = "AI Smart Safety",
-            description = "Experience industry-leading AI that analyzes drug interactions and provides personalized health insights.",
+            title = "AI Smart Chatbot",
+            description = "Ask our specialized AI assistant about medications, side effects, and health concerns 24/7.",
             icon = Icons.Default.AutoAwesome,
             backgroundColor = MaterialTheme.colorScheme.secondaryContainer
         ),
         OnboardingPage(
-            title = "Family Care System",
-            description = "Easily manage medication profiles for your children, parents, or elderly family members in one place.",
-            icon = Icons.Default.Groups,
+            title = "Prescription & Receipt Scanner",
+            description = "Digitize your medical documents instantly using our advanced AI-powered OCR scanner.",
+            icon = Icons.Default.DocumentScanner,
             backgroundColor = MaterialTheme.colorScheme.tertiaryContainer
         ),
         OnboardingPage(
-            title = "SOS Emergency Alerts",
-            description = "Critical situations demand fast action. One-tap SOS notifies all your linked caregivers instantly.",
-            icon = Icons.Default.Emergency,
-            backgroundColor = Color(0xFFFFDAD6) // Error-ish red for SOS
+            title = "Medication Management",
+            description = "Easily add or delete medications, and get precise reminders for every dose.",
+            icon = Icons.Default.Medication,
+            backgroundColor = Color(0xFFE8F5E9)
         ),
         OnboardingPage(
-            title = "Progress & Analytics",
-            description = "Track your health journey with beautiful charts, streaks, and adherence reports to stay motivated.",
+            title = "Analytics & Reports",
+            description = "Visualize your adherence trends and download comprehensive PDF health reports.",
             icon = Icons.Default.BarChart,
             backgroundColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        OnboardingPage(
+            title = "SOS Emergency Alerts",
+            description = "One-tap SOS notifies your caregivers and provides them with your critical health info.",
+            icon = Icons.Default.Emergency,
+            backgroundColor = Color(0xFFFFDAD6)
         )
     )
 
@@ -75,7 +80,6 @@ fun AppIntroScreen(
     val scope = rememberCoroutineScope()
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        // Background Gradient Glow
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -90,7 +94,6 @@ fun AppIntroScreen(
         )
 
         Column(modifier = Modifier.fillMaxSize()) {
-            // Header with Skip
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -111,7 +114,6 @@ fun AppIntroScreen(
                 }
             }
 
-            // Carousel Content
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.weight(1f),
@@ -120,7 +122,6 @@ fun AppIntroScreen(
                 OnboardingPageView(pages[index])
             }
 
-            // Bottom Navigation Area
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -135,7 +136,6 @@ fun AppIntroScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Modern Indicators
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         repeat(pages.size) { index ->
                             val isSelected = pagerState.currentPage == index
@@ -154,7 +154,6 @@ fun AppIntroScreen(
                         }
                     }
 
-                    // Action Button
                     Button(
                         onClick = {
                             if (pagerState.currentPage < pages.size - 1) {
@@ -208,18 +207,16 @@ fun OnboardingPageView(page: OnboardingPage) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Animated Illustration Placeholder
         Box(
             modifier = Modifier
-                .size(240.dp)
+                .size(200.dp)
                 .background(page.backgroundColor.copy(alpha = 0.5f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            // Subtle pulse animation logic could go here
             Icon(
                 imageVector = page.icon,
                 contentDescription = null,
-                modifier = Modifier.size(120.dp),
+                modifier = Modifier.size(100.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
         }
@@ -228,20 +225,20 @@ fun OnboardingPageView(page: OnboardingPage) {
 
         Text(
             text = page.title,
-            style = MaterialTheme.typography.displaySmall,
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.ExtraBold,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurface
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         Text(
             text = page.description,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
-            lineHeight = 28.sp,
+            lineHeight = 24.sp,
             modifier = Modifier.padding(horizontal = 8.dp)
         )
     }

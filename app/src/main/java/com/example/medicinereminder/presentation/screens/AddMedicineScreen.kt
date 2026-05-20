@@ -27,6 +27,7 @@ import com.example.medicinereminder.presentation.viewmodel.MedicineViewModel
 import com.example.medicinereminder.presentation.viewmodel.ViewModelFactory
 import com.example.medicinereminder.utils.Resource
 import kotlinx.coroutines.flow.collectLatest
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -37,7 +38,7 @@ fun AddMedicineScreen(
     viewModel: MedicineViewModel = viewModel(factory = ViewModelFactory(LocalContext.current)),
     scannedText: String? = null
 ) {
-    var name by remember { mutableStateOf(scannedText ?: "") }
+    var name by remember { mutableStateOf("") }
     var type by remember { mutableStateOf("Tablet") }
     var dosage by remember { mutableStateOf("") }
     var frequency by remember { mutableStateOf("Daily") }
@@ -46,6 +47,34 @@ fun AddMedicineScreen(
     var notes by remember { mutableStateOf("") }
     var selectedColor by remember { mutableStateOf(0xFF006A6A.toInt()) }
     var timingList by remember { mutableStateOf(listOf("08:00 AM")) }
+
+    LaunchedEffect(scannedText) {
+        if (!scannedText.isNullOrBlank()) {
+            try {
+                if (scannedText.trim().startsWith("{")) {
+                    val json = JSONObject(scannedText)
+                    name = json.optString("name", "")
+                    val extractedType = json.optString("type", "Tablet")
+                    if (listOf("Tablet", "Capsule", "Syrup", "Injection", "Drops").contains(extractedType)) {
+                        type = extractedType
+                    }
+                    dosage = json.optString("dosage", "")
+                    val timings = json.optJSONArray("timings")
+                    if (timings != null && timings.length() > 0) {
+                        val list = mutableListOf<String>()
+                        for (i in 0 until timings.length()) {
+                            list.add(timings.getString(i))
+                        }
+                        timingList = list
+                    }
+                } else {
+                    name = scannedText
+                }
+            } catch (e: Exception) {
+                name = scannedText
+            }
+        }
+    }
 
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }

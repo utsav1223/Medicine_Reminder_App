@@ -137,6 +137,37 @@ class AuthViewModel(
             when (val result = repository.resetPassword(email)) {
                 is Resource.Success -> {
                     _eventFlow.emit(UiEvent.ShowSnackbar(result.data ?: "Email sent"))
+                    _eventFlow.emit(UiEvent.Navigate(Screen.VerifyOtp.passEmail(email)))
+                }
+                is Resource.Error -> {
+                    _error.value = result.message
+                }
+                else -> {}
+            }
+            _loading.value = false
+        }
+    }
+
+    fun resetPasswordWithCode(code: String, newPass: String, confirmPass: String) {
+        if (newPass.isBlank() || confirmPass.isBlank()) {
+            _error.value = "Please fill all fields"
+            return
+        }
+        if (newPass != confirmPass) {
+            _error.value = "Passwords do not match"
+            return
+        }
+        if (newPass.length < 6) {
+            _error.value = "Password must be at least 6 characters"
+            return
+        }
+        viewModelScope.launch {
+            _loading.value = true
+            _error.value = null
+            when (val result = repository.confirmPasswordReset(code, newPass)) {
+                is Resource.Success -> {
+                    _eventFlow.emit(UiEvent.ShowSnackbar("Password reset successful. Please sign in."))
+                    _eventFlow.emit(UiEvent.Navigate(Screen.Login.route))
                 }
                 is Resource.Error -> {
                     _error.value = result.message
@@ -150,7 +181,7 @@ class AuthViewModel(
     fun logout() {
         viewModelScope.launch {
             repository.logout()
-            _eventFlow.emit(UiEvent.Navigate(Screen.Login.route))
+            _eventFlow.emit(UiEvent.Navigate(Screen.AppIntro.route))
         }
     }
 

@@ -98,4 +98,13 @@ class AdminViewModel(private val repository: com.example.medicinereminder.data.r
             _users.value = repository.getAllUsers()
         }
     }
+
+    fun deleteUser(uid: String) {
+        viewModelScope.launch {
+            val result = repository.deleteUser(uid)
+            if (result is Resource.Success) {
+                loadData()
+            }
+        }
+    }
 }

@@ -5,6 +5,12 @@ sealed class Screen(val route: String) {
     object Login : Screen("login")
     object Register : Screen("register")
     object ForgotPassword : Screen("forgot_password")
+    object VerifyOtp : Screen("verify_otp/{email}") {
+        fun passEmail(email: String) = "verify_otp/$email"
+    }
+    object ResetPassword : Screen("reset_password/{code}") {
+        fun passCode(code: String) = "reset_password/$code"
+    }
     object Home : Screen("home")
     object MedicineList : Screen("medicine_list")
     object AddMedicine : Screen("add_medicine")

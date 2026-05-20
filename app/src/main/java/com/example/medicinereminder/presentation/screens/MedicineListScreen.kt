@@ -1,5 +1,6 @@
 package com.example.medicinereminder.presentation.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -36,20 +38,40 @@ fun MedicineListScreen(
 
     Scaffold(
         topBar = {
-            AppToolbar(
-                title = "My Medications",
-                showBackButton = false
-            )
+            Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+                AppToolbar(
+                    title = "My Medications",
+                    showBackButton = false
+                )
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
+                        MedicineSearchBar(
+                            query = searchQuery,
+                            onQueryChange = { searchQuery = it }
+                        )
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        MedicineTypeSelector(
+                            selectedType = selectedType,
+                            onTypeSelected = { selectedType = it },
+                            showAllOption = true
+                        )
+                    }
+                }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.05f))
+            }
         },
         floatingActionButton = {
-            FloatingActionButton(
+            LargeFloatingActionButton(
                 onClick = { navController.navigate(Screen.AddMedicine.route) },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = RoundedCornerShape(20.dp),
-                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp)
+                shape = RoundedCornerShape(20.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Medicine", modifier = Modifier.size(28.dp))
+                Icon(Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(32.dp), tint = Color.White)
             }
         }
     ) { padding ->
@@ -57,35 +79,12 @@ fun MedicineListScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            // Refined Filter/Search Area
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.background,
-                tonalElevation = 0.dp
-            ) {
-                Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
-                    MedicineSearchBar(
-                        query = searchQuery,
-                        onQueryChange = { searchQuery = it }
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    MedicineTypeSelector(
-                        selectedType = selectedType,
-                        onTypeSelected = { selectedType = it },
-                        showAllOption = true
-                    )
-                }
-            }
-
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
-
             when (val result = medicinesState) {
                 is Resource.Loading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                        CircularProgressIndicator(strokeWidth = 3.dp)
                     }
                 }
                 is Resource.Success -> {
@@ -97,13 +96,22 @@ fun MedicineListScreen(
                     if (filteredMedicines.isEmpty()) {
                         EmptyState(
                             message = if (searchQuery.isEmpty()) "No medications yet" else "No matches found",
-                            description = if (searchQuery.isEmpty()) "Tap the + button to add your first medicine reminder" else "Try searching for a different name or type"
+                            description = if (searchQuery.isEmpty()) "Click the + button to build your medication list." else "Try adjusting your search or filters."
                         )
                     } else {
                         LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 100.dp)
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 100.dp)
                         ) {
+                            item {
+                                Text(
+                                    text = "Active Reminders (${filteredMedicines.size})",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(bottom = 12.dp)
+                                )
+                            }
                             items(filteredMedicines) { medicine ->
                                 MedicineCard(
                                     medicine = medicine,
@@ -117,7 +125,7 @@ fun MedicineListScreen(
                 }
                 is Resource.Error -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        ErrorMessage(message = result.message ?: "Failed to load medicines")
+                        ErrorMessage(message = result.message ?: "Could not load your medications.")
                     }
                 }
             }

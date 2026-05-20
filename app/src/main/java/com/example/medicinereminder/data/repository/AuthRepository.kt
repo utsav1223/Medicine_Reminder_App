@@ -14,6 +14,7 @@ interface AuthRepository {
     suspend fun register(name: String, email: String, password: String): Resource<User>
     suspend fun logout()
     suspend fun resetPassword(email: String): Resource<String>
+    suspend fun confirmPasswordReset(code: String, newPassword: String): Resource<Unit>
 }
 
 class AuthRepositoryImpl(
@@ -90,9 +91,18 @@ class AuthRepositoryImpl(
     override suspend fun resetPassword(email: String): Resource<String> {
         return try {
             auth.sendPasswordResetEmail(email).await()
-            Resource.Success("Password reset email sent")
+            Resource.Success("Password reset link sent to your email. Please check your inbox (and spam).")
         } catch (e: Exception) {
             Resource.Error(e.message ?: "An unknown error occurred")
+        }
+    }
+
+    override suspend fun confirmPasswordReset(code: String, newPassword: String): Resource<Unit> {
+        return try {
+            auth.confirmPasswordReset(code, newPassword).await()
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Failed to reset password. The code may be invalid or expired.")
         }
     }
 }
