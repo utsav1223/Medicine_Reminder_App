@@ -13,6 +13,7 @@ data class Medicine(
     val timingList: List<String> = emptyList(),
     val notes: String = "",
     val colorTag: Int = 0,
+    val imageUrl: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val lastModified: Long = System.currentTimeMillis(),
     val userId: String = ""
