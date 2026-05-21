@@ -55,6 +55,7 @@ class ReminderRepositoryImpl(
                                 reminderDate = startOfDay,
                                 scheduledTime = scheduledTime,
                                 status = ReminderStatus.PENDING,
+                                imageUrl = medicine.imageUrl,
                                 userId = userId
                             )
                             reminderDao.insertReminder(reminder.toEntity(isSynced = false))

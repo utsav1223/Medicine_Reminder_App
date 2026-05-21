@@ -17,6 +17,7 @@ data class MedicineEntity(
     val timingList: String, // Comma separated
     val notes: String,
     val colorTag: Int,
+    val imageUrl: String? = null,
     val createdAt: Long,
     val lastModified: Long,
     val userId: String,
@@ -36,6 +37,7 @@ fun MedicineEntity.toMedicine(): Medicine {
         timingList = timingList.split(",").filter { it.isNotBlank() },
         notes = notes,
         colorTag = colorTag,
+        imageUrl = imageUrl,
         createdAt = createdAt,
         lastModified = lastModified,
         userId = userId
@@ -54,6 +56,7 @@ fun Medicine.toEntity(isSynced: Boolean = false, isDeleted: Boolean = false, las
         timingList = timingList.joinToString(","),
         notes = notes,
         colorTag = colorTag,
+        imageUrl = imageUrl,
         createdAt = createdAt,
         lastModified = if (lastModified > this.lastModified) lastModified else this.lastModified,
         userId = userId,

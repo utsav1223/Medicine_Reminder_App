@@ -18,9 +18,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.medicinereminder.data.model.Medicine
 import com.example.medicinereminder.data.model.MedicineType
 import com.example.medicinereminder.ui.theme.GradientEnd
@@ -56,15 +58,25 @@ fun MedicineCard(
                         color = Color(medicine.colorTag).copy(alpha = 0.1f),
                         shape = RoundedCornerShape(18.dp)
                     )
+                    .clip(RoundedCornerShape(18.dp))
                     .border(1.dp, Color(medicine.colorTag).copy(alpha = 0.2f), RoundedCornerShape(18.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = getMedicineIcon(medicine.medicineType),
-                    contentDescription = null,
-                    tint = Color(medicine.colorTag),
-                    modifier = Modifier.size(28.dp)
-                )
+                if (medicine.imageUrl != null) {
+                    AsyncImage(
+                        model = medicine.imageUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        imageVector = getMedicineIcon(medicine.medicineType),
+                        contentDescription = null,
+                        tint = Color(medicine.colorTag),
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(16.dp))
