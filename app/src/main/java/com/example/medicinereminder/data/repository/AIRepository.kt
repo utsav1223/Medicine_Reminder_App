@@ -1,5 +1,6 @@
 package com.example.medicinereminder.data.repository
 
+import com.example.medicinereminder.BuildConfig
 import com.example.medicinereminder.data.model.ChatMessage
 import com.example.medicinereminder.utils.Resource
 import com.google.ai.client.generativeai.GenerativeModel
@@ -16,11 +17,9 @@ interface AIRepository {
 
 class AIRepositoryImpl : AIRepository {
     
-    // IMPORTANT: Get your API key from https://aistudio.google.com/
-    // and replace "YOUR_API_KEY_HERE" with your actual key.
     private val generativeModel = GenerativeModel(
-        modelName = "gemini-2.5-pro",
-        apiKey = "PASTE_YOUR_API_KEY",
+        modelName = "gemini-1.5-flash",
+        apiKey = BuildConfig.GEMINI_API_KEY,
         generationConfig = generationConfig {
             temperature = 1f
             topP = 0.95f
