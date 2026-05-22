@@ -20,7 +20,7 @@ class AIRepositoryImpl : AIRepository {
     // and replace "YOUR_API_KEY_HERE" with your actual key.
     private val generativeModel = GenerativeModel(
         modelName = "gemini-2.5-pro",
-        apiKey = "PASTE_YOUR_API_KEY",
+        apiKey = "AIzaSyCIuao3UUufAgQLyFBh_fvUJYgw6ROpqC0",
         generationConfig = generationConfig {
             temperature = 1f
             topP = 0.95f
