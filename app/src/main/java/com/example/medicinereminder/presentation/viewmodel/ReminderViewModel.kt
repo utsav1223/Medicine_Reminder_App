@@ -21,34 +21,55 @@ class ReminderViewModel(
     private val _remindersState = MutableStateFlow<Resource<List<ReminderRecord>>>(Resource.Loading())
     val remindersState: StateFlow<Resource<List<ReminderRecord>>> = _remindersState.asStateFlow()
 
+    private val _eventFlow = MutableSharedFlow<UiEvent>()
+    val eventFlow = _eventFlow.asSharedFlow()
+
     private val userId: String
         get() = authRepository.currentUser?.uid ?: ""
 
     init {
-        getTodayReminders()
+        loadReminders()
     }
 
-    fun getTodayReminders() {
+    private fun loadReminders() {
         if (userId.isBlank()) return
+        
+        // 1. Collect reminders in a long-running coroutine
         viewModelScope.launch {
-            // Ensure reminders are scheduled for today
-            repository.scheduleDailyReminders(userId)
-            
             repository.getTodayReminders(userId).collectLatest { result ->
                 _remindersState.value = result
             }
         }
+        
+        // 2. Schedule reminders in background
+        viewModelScope.launch {
+            repository.scheduleDailyReminders(userId)
+        }
     }
 
     fun updateStatus(reminderId: String, status: ReminderStatus) {
+        if (userId.isBlank()) return
         viewModelScope.launch {
-            repository.updateReminderStatus(reminderId, userId, status)
+            val result = repository.updateReminderStatus(reminderId, userId, status)
+            if (result is Resource.Success) {
+                _eventFlow.emit(UiEvent.ShowSnackbar("Dose marked as ${status.name.lowercase()}"))
+            } else {
+                _eventFlow.emit(UiEvent.ShowSnackbar(result.message ?: "Failed to update status"))
+            }
         }
     }
 
     fun snooze(reminderId: String, minutes: Int) {
+        if (userId.isBlank()) return
         viewModelScope.launch {
-            repository.snoozeReminder(reminderId, userId, minutes)
+            val result = repository.snoozeReminder(reminderId, userId, minutes)
+            if (result is Resource.Success) {
+                _eventFlow.emit(UiEvent.ShowSnackbar("Dose snoozed for $minutes mins"))
+            }
         }
+    }
+    
+    sealed class UiEvent {
+        data class ShowSnackbar(val message: String) : UiEvent()
     }
 }

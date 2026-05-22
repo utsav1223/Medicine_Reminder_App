@@ -1,12 +1,9 @@
 package com.example.medicinereminder.data.repository
 
-import com.example.medicinereminder.data.model.ChatMessage
 import com.example.medicinereminder.utils.Resource
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.content
 import com.google.ai.client.generativeai.type.generationConfig
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 
 interface AIRepository {
     suspend fun getChatResponse(message: String): Resource<String>
@@ -16,17 +13,18 @@ interface AIRepository {
 
 class AIRepositoryImpl : AIRepository {
     
-    // IMPORTANT: Get your API key from https://aistudio.google.com/
-    // and replace "YOUR_API_KEY_HERE" with your actual key.
-    private val generativeModel = GenerativeModel(
-        modelName = "gemini-2.5-pro",
-        apiKey = "PASTE_YOUR_API_KEY",
-        generationConfig = generationConfig {
-            temperature = 1f
-            topP = 0.95f
-            topK = 64
-        }
-    )
+    // Using the requested model name
+    private val generativeModel by lazy {
+        GenerativeModel(
+            modelName = "gemini-2.5-pro",
+            apiKey = "AIzaSyCIuao3UUufAgQLyFBh_fvUJYgw6ROpqC0",
+            generationConfig = generationConfig {
+                temperature = 1f
+                topP = 0.95f
+                topK = 64
+            }
+        )
+    }
 
     private val systemPrompt = """
         You are a highly specialized Medical and Pharmaceutical Assistant for the 'MedReminder' app.

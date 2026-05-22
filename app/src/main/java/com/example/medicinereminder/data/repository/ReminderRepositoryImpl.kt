@@ -77,11 +77,19 @@ class ReminderRepositoryImpl(
     ): Resource<Unit> {
         return try {
             val reminder = reminderDao.getReminderById(reminderId) ?: return Resource.Error("Not found")
-            val updated = reminder.toReminderRecord().copy(
+            val reminderRecord = reminder.toReminderRecord()
+            val updated = reminderRecord.copy(
                 status = status,
-                completedAt = if (status == ReminderStatus.TAKEN) System.currentTimeMillis() else null
+                completedAt = if (status == ReminderStatus.TAKEN) System.currentTimeMillis() else null,
+                lastModified = System.currentTimeMillis()
             )
             reminderDao.insertReminder(updated.toEntity(isSynced = false))
+            
+            // Cancel notification if taken or skipped
+            if (status == ReminderStatus.TAKEN || status == ReminderStatus.SKIPPED) {
+                scheduler.cancel(reminderRecord)
+            }
+            
             Resource.Success(Unit)
         } catch (e: Exception) {
             Resource.Error(e.message ?: "Failed to update status")
@@ -111,12 +119,13 @@ class ReminderRepositoryImpl(
         }
     }
 
-    override fun getTodayReminders(userId: String): Flow<Resource<List<ReminderRecord>>> = flow {
-        emit(Resource.Loading())
+    override fun getTodayReminders(userId: String): Flow<Resource<List<ReminderRecord>>> {
         val startOfDay = DateUtils.getStartOfDay()
-        reminderDao.getRemindersForDate(userId, startOfDay).collect { entities ->
-            emit(Resource.Success(entities.map { it.toReminderRecord() }))
-        }
+        return reminderDao.getRemindersForDate(userId, startOfDay)
+            .map { entities -> 
+                Resource.Success(entities.map { it.toReminderRecord() }) as Resource<List<ReminderRecord>>
+            }
+            .onStart { emit(Resource.Loading()) }
     }
 
     override fun getReminderHistory(userId: String): Flow<Resource<List<ReminderRecord>>> = flow {

@@ -17,7 +17,7 @@ import com.example.medicinereminder.data.local.entity.ReminderRecordEntity
         ReminderRecordEntity::class,
         DailyAnalyticsEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class MedicineDatabase : RoomDatabase() {

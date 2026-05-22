@@ -37,6 +37,18 @@ fun TodayRemindersScreen(
     var selectedReminderId by remember { mutableStateOf<String?>(null) }
     var selectedFilter by remember { mutableStateOf("All") }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.eventFlow.collect { event ->
+            when (event) {
+                is ReminderViewModel.UiEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+            }
+        }
+    }
+
     if (selectedReminderId != null) {
         SnoozeDialog(
             onDismiss = { selectedReminderId = null },
@@ -59,7 +71,8 @@ fun TodayRemindersScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(
             modifier = Modifier

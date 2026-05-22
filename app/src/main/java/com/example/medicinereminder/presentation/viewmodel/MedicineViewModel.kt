@@ -59,13 +59,19 @@ class MedicineViewModel(
         viewModelScope.launch {
             _addMedicineState.value = Resource.Loading()
             
-            // Check for drug interactions using AI
+            // Check for drug interactions using AI in background
             val existingMedicines = (medicinesState.value as? Resource.Success)?.data ?: emptyList()
             if (existingMedicines.isNotEmpty()) {
-                val medicineNames = existingMedicines.map { it.medicineName } + medicine.medicineName
-                val interactionResult = aiRepository.analyzeInteractions(medicineNames)
-                if (interactionResult is Resource.Success && interactionResult.data != "No interactions detected.") {
-                    _interactionWarning.value = interactionResult.data
+                launch {
+                    try {
+                        val medicineNames = existingMedicines.map { it.medicineName } + medicine.medicineName
+                        val interactionResult = aiRepository.analyzeInteractions(medicineNames)
+                        if (interactionResult is Resource.Success && interactionResult.data != "No interactions detected.") {
+                            _interactionWarning.value = interactionResult.data
+                        }
+                    } catch (e: Exception) {
+                        // AI failures shouldn't block medicine creation
+                    }
                 }
             }
 

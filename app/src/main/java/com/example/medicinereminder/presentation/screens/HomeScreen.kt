@@ -64,6 +64,18 @@ fun HomeScreen(
     val profileState by profileViewModel.uiState.collectAsState()
     val interactionWarning by medicineViewModel.interactionWarning.collectAsState()
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        reminderViewModel.eventFlow.collect { event ->
+            when (event) {
+                is ReminderViewModel.UiEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+            }
+        }
+    }
+
     val pendingCount = if (remindersState is Resource.Success) {
         (remindersState as Resource.Success<List<ReminderRecord>>).data?.count { it.status == ReminderStatus.PENDING || it.status == ReminderStatus.SNOOZED } ?: 0
     } else 0
@@ -110,6 +122,7 @@ fun HomeScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { navController.navigate(Screen.AddMedicine.route) },
@@ -134,7 +147,7 @@ fun HomeScreen(
             DailyProgressSection(remindersState)
 
             // 2. Upcoming Dose Highlight (The "Hero" Card)
-            UpcomingReminderSection(remindersState)
+            UpcomingReminderSection(remindersState, reminderViewModel)
 
             // 3. Smart Health Insights (AI Generated Style)
             if (interactionWarning != null) {
@@ -220,7 +233,7 @@ fun DailyProgressSection(state: Resource<List<ReminderRecord>>) {
 }
 
 @Composable
-fun UpcomingReminderSection(state: Resource<List<ReminderRecord>>) {
+fun UpcomingReminderSection(state: Resource<List<ReminderRecord>>, viewModel: ReminderViewModel) {
     val upcoming = if (state is Resource.Success) {
         state.data?.filter { it.status == ReminderStatus.PENDING || it.status == ReminderStatus.SNOOZED }
             ?.sortedBy { it.scheduledTime }?.firstOrNull()
@@ -252,7 +265,7 @@ fun UpcomingReminderSection(state: Resource<List<ReminderRecord>>) {
                             Spacer(modifier = Modifier.height(24.dp))
                             
                             Button(
-                                onClick = { /* Handle take action */ },
+                                onClick = { viewModel.updateStatus(upcoming.reminderId, ReminderStatus.TAKEN) },
                                 colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = GradientStart),
                                 shape = RoundedCornerShape(16.dp),
                                 modifier = Modifier.height(48.dp)
