@@ -17,7 +17,7 @@ class AIRepositoryImpl : AIRepository {
     private val generativeModel by lazy {
         GenerativeModel(
             modelName = "gemini-2.5-pro",
-            apiKey = "AIzaSyCI9GHxEGGxJjtlCi-AewhZMGPkuu503Xc",
+            apiKey = "",
             generationConfig = generationConfig {
                 temperature = 1f
                 topP = 0.95f
